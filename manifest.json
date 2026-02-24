@@ -1,11 +1,11 @@
 {
-  "name": "BizTask - ビジネスタスク管理",
-  "short_name": "BizTask",
-  "description": "スマホで使えるビジネスタスク管理アプリ",
+  "name": "EC Mail Desk - EC店舗メール管理",
+  "short_name": "EC Mail Desk",
+  "description": "楽天・Yahoo等のEC店舗メールを管理し、AIで返信を自動生成するツール",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f5f5f5",
-  "theme_color": "#1a73e8",
+  "background_color": "#f0f2f5",
+  "theme_color": "#1a1a2e",
   "orientation": "portrait",
   "icons": [
     {
