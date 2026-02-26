@@ -1,4 +1,4 @@
-const CACHE_NAME = 'biztask-v1';
+const CACHE_NAME = 'essence-checker-v1';
 const ASSETS = [
   './index.html',
   './manifest.json'
