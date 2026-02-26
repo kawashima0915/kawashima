@@ -1,11 +1,11 @@
 {
-  "name": "EC Mail Desk - EC店舗メール管理",
-  "short_name": "EC Mail Desk",
-  "description": "楽天・Yahoo等のEC店舗メールを管理し、AIで返信を自動生成するツール",
+  "name": "本質チェッカー",
+  "short_name": "本質チェッカー",
+  "description": "言葉を入力すると、その本質を鋭く見抜くアプリ",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f0f2f5",
-  "theme_color": "#1a1a2e",
+  "background_color": "#0f0f23",
+  "theme_color": "#0f0f23",
   "orientation": "portrait",
   "icons": [
     {

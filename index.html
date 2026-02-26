@@ -3,30 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#1a1a2e">
+  <meta name="theme-color" content="#0f0f23">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
-  <title>EC Mail Desk - EC店舗メール管理</title>
+  <title>本質チェッカー</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --primary: #6c5ce7;
-      --primary-dark: #5a4bd1;
-      --primary-light: #a29bfe;
-      --rakuten: #bf0000;
-      --yahoo: #ff0033;
-      --other: #0984e3;
-      --bg: #f0f2f5;
-      --card: #ffffff;
-      --text: #2d3436;
-      --text-secondary: #636e72;
-      --border: #dfe6e9;
-      --shadow: 0 2px 8px rgba(0,0,0,0.08);
-      --radius: 12px;
-      --success: #00b894;
-      --warning: #fdcb6e;
-      --danger: #e17055;
+      --bg: #0f0f23;
+      --bg-card: #1a1a35;
+      --bg-input: #12122a;
+      --primary: #7c3aed;
+      --primary-glow: rgba(124, 58, 237, 0.4);
+      --accent: #06b6d4;
+      --accent-glow: rgba(6, 182, 212, 0.3);
+      --text: #e2e8f0;
+      --text-dim: #94a3b8;
+      --text-bright: #f8fafc;
+      --border: #2d2d52;
+      --radius: 16px;
     }
 
     body {
@@ -34,1477 +31,1036 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    /* Background animation */
+    .bg-effect {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 0;
       overflow: hidden;
     }
 
-    /* Layout */
-    .app-container {
+    .bg-effect::before {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+      top: -200px; right: -200px;
+      animation: float1 8s ease-in-out infinite;
+    }
+
+    .bg-effect::after {
+      content: '';
+      position: absolute;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      bottom: -150px; left: -150px;
+      animation: float2 10s ease-in-out infinite;
+    }
+
+    @keyframes float1 {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(-50px, 50px); }
+    }
+
+    @keyframes float2 {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(50px, -30px); }
+    }
+
+    /* App container */
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 20px;
+      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
-      height: 100vh;
     }
 
     /* Header */
     .header {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      color: white;
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      text-align: center;
+      padding: 48px 0 24px;
       flex-shrink: 0;
-      z-index: 100;
     }
 
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .header-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      display: inline-block;
+      animation: pulse-icon 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse-icon {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px var(--primary-glow)); }
+      50% { transform: scale(1.08); filter: drop-shadow(0 0 20px var(--primary-glow)); }
     }
 
     .header h1 {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #c084fc, #7c3aed, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 2px;
     }
 
-    .header h1 span {
-      color: var(--primary-light);
-    }
-
-    .header-badge {
-      font-size: 11px;
-      background: var(--primary);
-      padding: 2px 8px;
-      border-radius: 10px;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .header-btn {
-      background: rgba(255,255,255,0.1);
-      border: none;
-      color: white;
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      transition: background 0.2s;
-    }
-
-    .header-btn:hover { background: rgba(255,255,255,0.2); }
-
-    /* Main Content */
-    .main-content {
-      flex: 1;
-      display: flex;
-      overflow: hidden;
-    }
-
-    /* Sidebar - Mail List */
-    .mail-sidebar {
-      width: 360px;
-      background: var(--card);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-    }
-
-    /* Platform Tabs */
-    .platform-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .platform-tab {
-      flex: 1;
-      padding: 10px 8px;
-      border: none;
-      background: none;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      cursor: pointer;
-      position: relative;
-      transition: color 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-    }
-
-    .platform-tab.active { color: var(--primary); }
-
-    .platform-tab.active::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 10%;
-      right: 10%;
-      height: 3px;
-      background: var(--primary);
-      border-radius: 3px 3px 0 0;
-    }
-
-    .platform-tab .tab-count {
-      font-size: 10px;
-      background: var(--bg);
-      padding: 1px 6px;
-      border-radius: 8px;
-      color: var(--text-secondary);
-    }
-
-    .platform-tab.active .tab-count {
-      background: var(--primary);
-      color: white;
-    }
-
-    /* Search */
-    .search-bar {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .search-input {
-      width: 100%;
-      padding: 8px 12px 8px 36px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      font-size: 13px;
-      background: var(--bg);
-      color: var(--text);
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23636e72' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: 10px center;
-    }
-
-    .search-input:focus { outline: none; border-color: var(--primary); }
-
-    /* Mail List */
-    .mail-list {
-      flex: 1;
-      overflow-y: auto;
-    }
-
-    .mail-item {
-      padding: 12px 16px;
-      border-bottom: 1px solid #f0f0f0;
-      cursor: pointer;
-      transition: background 0.15s;
-      position: relative;
-    }
-
-    .mail-item:hover { background: #f8f9fa; }
-    .mail-item.active { background: #ede9fe; }
-    .mail-item.unread { background: #fafbff; }
-
-    .mail-item.unread::before {
-      content: '';
-      position: absolute;
-      left: 4px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 6px;
-      height: 6px;
-      background: var(--primary);
-      border-radius: 50%;
-    }
-
-    .mail-item-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-
-    .mail-sender {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .mail-item.unread .mail-sender { font-weight: 700; }
-
-    .mail-time {
-      font-size: 11px;
-      color: var(--text-secondary);
-    }
-
-    .mail-subject {
-      font-size: 13px;
-      color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-bottom: 4px;
-    }
-
-    .mail-preview {
-      font-size: 12px;
-      color: var(--text-secondary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .mail-tags {
-      display: flex;
-      gap: 4px;
+    .header p {
+      color: var(--text-dim);
+      font-size: 14px;
       margin-top: 6px;
     }
 
-    .mail-tag {
-      font-size: 10px;
-      padding: 1px 6px;
-      border-radius: 4px;
-      font-weight: 500;
-    }
-
-    .tag-rakuten { background: #ffeaea; color: var(--rakuten); }
-    .tag-yahoo { background: #ffe5e9; color: var(--yahoo); }
-    .tag-other { background: #e3f2fd; color: var(--other); }
-    .tag-replied { background: #e6fff6; color: var(--success); }
-    .tag-pending { background: #fff8e1; color: #e17055; }
-
-    /* Mail Detail */
-    .mail-detail {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .mail-detail-empty {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-secondary);
-      gap: 12px;
-    }
-
-    .mail-detail-empty .empty-icon {
-      font-size: 64px;
-      opacity: 0.3;
-    }
-
-    .mail-detail-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .detail-header {
-      padding: 16px 24px;
-      border-bottom: 1px solid var(--border);
+    /* Input area */
+    .input-area {
       flex-shrink: 0;
+      margin-bottom: 24px;
     }
 
-    .detail-subject {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .detail-meta {
-      display: flex;
-      gap: 16px;
-      font-size: 13px;
-      color: var(--text-secondary);
-      flex-wrap: wrap;
-    }
-
-    .detail-meta strong { color: var(--text); }
-
-    .detail-body-wrapper {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px 24px;
-    }
-
-    .detail-body {
-      font-size: 14px;
-      line-height: 1.8;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    /* Reply Section */
-    .reply-section {
-      border-top: 1px solid var(--border);
-      padding: 16px 24px;
-      background: #fafbfc;
-      flex-shrink: 0;
-    }
-
-    .reply-actions {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .btn {
-      padding: 8px 16px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-    }
-
-    .btn-primary:hover { background: var(--primary-dark); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .btn-secondary {
-      background: var(--card);
-      color: var(--text);
-      border: 1.5px solid var(--border);
-    }
-
-    .btn-secondary:hover { background: var(--bg); }
-
-    .btn-success {
-      background: var(--success);
-      color: white;
-    }
-
-    .btn-success:hover { background: #00a381; }
-
-    .reply-textarea {
-      width: 100%;
-      min-height: 120px;
-      max-height: 300px;
-      padding: 12px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      font-size: 14px;
-      font-family: inherit;
-      line-height: 1.7;
-      resize: vertical;
-      color: var(--text);
-    }
-
-    .reply-textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-
-    .reply-status {
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-top: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .generating-indicator {
-      display: inline-flex;
-      gap: 3px;
-      align-items: center;
-    }
-
-    .generating-indicator span {
-      width: 4px;
-      height: 4px;
-      background: var(--primary);
-      border-radius: 50%;
-      animation: bounce 1.2s infinite;
-    }
-
-    .generating-indicator span:nth-child(2) { animation-delay: 0.2s; }
-    .generating-indicator span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0); }
-      40% { transform: scale(1); }
-    }
-
-    /* Bottom Nav (Mobile) */
-    .bottom-nav {
-      display: none;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: var(--card);
-      border-top: 1px solid var(--border);
-      justify-content: space-around;
-      padding: 6px 0;
-      padding-bottom: max(6px, env(safe-area-inset-bottom));
-      z-index: 100;
-    }
-
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-      padding: 4px 12px;
-      border: none;
-      background: none;
-      color: var(--text-secondary);
-      font-size: 10px;
-      cursor: pointer;
-    }
-
-    .nav-item.active { color: var(--primary); }
-    .nav-item svg { width: 22px; height: 22px; }
-
-    /* Modal Overlay */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 200;
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-overlay.active { display: flex; }
-
-    .modal {
-      background: var(--card);
-      border-radius: 16px;
-      width: 90%;
-      max-width: 600px;
-      max-height: 85vh;
-      overflow-y: auto;
-      padding: 24px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    }
-
-    .modal h2 {
-      font-size: 18px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .modal-close {
-      margin-left: auto;
-      background: none;
-      border: none;
-      font-size: 22px;
-      color: var(--text-secondary);
-      cursor: pointer;
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-close:hover { background: var(--bg); }
-
-    /* Form */
-    .form-group {
-      margin-bottom: 14px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin-bottom: 6px;
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      font-size: 14px;
-      font-family: inherit;
-      color: var(--text);
-    }
-
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-
-    .form-group textarea {
-      min-height: 120px;
-      resize: vertical;
-      line-height: 1.7;
-    }
-
-    /* Knowledge Base */
-    .knowledge-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .knowledge-item {
-      background: var(--bg);
-      border-radius: 10px;
-      padding: 12px 16px;
+    .input-wrapper {
       position: relative;
-    }
-
-    .knowledge-item-title {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 4px;
       display: flex;
-      align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
 
-    .knowledge-item-category {
-      font-size: 11px;
-      padding: 1px 8px;
-      border-radius: 6px;
-      background: var(--primary);
+    .input-wrapper input {
+      flex: 1;
+      background: var(--bg-input);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      font-size: 17px;
+      color: var(--text-bright);
+      outline: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      font-family: inherit;
+    }
+
+    .input-wrapper input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .input-wrapper input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-glow);
+    }
+
+    .btn-check {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      border: none;
+      border-radius: var(--radius);
+      padding: 16px 24px;
       color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.3s;
+      white-space: nowrap;
+      font-family: inherit;
     }
 
-    .knowledge-item-body {
-      font-size: 13px;
-      color: var(--text-secondary);
-      line-height: 1.6;
-      white-space: pre-wrap;
-      max-height: 80px;
+    .btn-check:active {
+      transform: scale(0.95);
+    }
+
+    .btn-check:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Result card */
+    .result-area {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 24px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .result-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      margin-bottom: 16px;
+      animation: card-appear 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
       overflow: hidden;
     }
 
-    .knowledge-item-actions {
-      display: flex;
-      gap: 4px;
-      margin-top: 8px;
+    .result-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #7c3aed, #06b6d4);
     }
 
-    .knowledge-item-actions button {
-      padding: 4px 10px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--card);
-      font-size: 12px;
-      cursor: pointer;
-      color: var(--text-secondary);
+    @keyframes card-appear {
+      from { opacity: 0; transform: translateY(20px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    .knowledge-item-actions button:hover { background: var(--border); }
-    .knowledge-item-actions .btn-delete:hover { background: #ffeaea; color: var(--danger); }
+    .result-word {
+      font-size: 13px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
 
-    /* Settings */
-    .settings-section {
+    .result-input-word {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-bright);
       margin-bottom: 20px;
     }
 
-    .settings-section h3 {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: var(--text-secondary);
-    }
-
-    .api-key-input {
-      font-family: monospace;
-    }
-
-    .settings-note {
+    .result-label {
       font-size: 12px;
-      color: var(--text-secondary);
-      margin-top: 4px;
-      line-height: 1.5;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .mail-sidebar {
-        width: 100%;
-        display: none;
-      }
-
-      .mail-sidebar.mobile-show { display: flex; }
-
-      .mail-detail {
-        display: none;
-      }
-
-      .mail-detail.mobile-show { display: flex; }
-
-      .bottom-nav { display: flex; }
-
-      body { padding-bottom: 56px; }
-
-      .detail-header { padding: 12px 16px; }
-      .detail-body-wrapper { padding: 12px 16px; }
-      .reply-section { padding: 12px 16px; }
-
-      .mobile-back {
-        display: flex !important;
-        align-items: center;
-        gap: 4px;
-        background: none;
-        border: none;
-        color: var(--primary);
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        padding: 4px 0;
-        margin-bottom: 8px;
-      }
-    }
-
-    @media (min-width: 769px) {
-      .mobile-back { display: none; }
-      .mail-sidebar { display: flex !important; }
-      .mail-detail { display: flex !important; }
-    }
-
-    /* Add Email FAB */
-    .fab {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: var(--primary);
-      color: white;
-      border: none;
-      font-size: 26px;
-      box-shadow: 0 4px 16px rgba(108,92,231,0.4);
-      cursor: pointer;
-      z-index: 90;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      transition: transform 0.2s;
+      gap: 6px;
     }
 
-    .fab:active { transform: scale(0.9); }
-
-    @media (max-width: 768px) {
-      .fab { bottom: 72px; }
+    .result-label::before {
+      content: '';
+      display: inline-block;
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: dot-pulse 2s ease-in-out infinite;
     }
 
-    /* View Panels for Knowledge & Settings */
-    .side-panel {
-      display: none;
-      flex-direction: column;
-      flex: 1;
-      overflow: hidden;
+    @keyframes dot-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
     }
 
-    .side-panel.active {
+    .result-essence {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-bright);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .result-detail {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.8;
+    }
+
+    .result-actions {
       display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
     }
 
-    .panel-header {
-      padding: 16px 24px;
-      border-bottom: 1px solid var(--border);
+    .btn-action {
+      flex: 1;
+      background: rgba(124, 58, 237, 0.15);
+      border: 1px solid rgba(124, 58, 237, 0.3);
+      border-radius: 10px;
+      padding: 10px;
+      color: #c084fc;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-family: inherit;
+    }
+
+    .btn-action:active {
+      background: rgba(124, 58, 237, 0.3);
+    }
+
+    /* Loading animation */
+    .loading {
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    .loading-dots {
+      display: inline-flex;
+      gap: 8px;
+    }
+
+    .loading-dots span {
+      width: 12px; height: 12px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: bounce 1.4s ease-in-out infinite;
+    }
+
+    .loading-dots span:nth-child(2) { animation-delay: 0.16s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.32s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    .loading-text {
+      color: var(--text-dim);
+      font-size: 14px;
+      margin-top: 16px;
+    }
+
+    /* History section */
+    .history-section {
+      margin-top: 8px;
+    }
+
+    .history-title {
+      font-size: 13px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-shrink: 0;
     }
 
-    .panel-header h2 {
-      font-size: 18px;
+    .btn-clear-history {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-family: inherit;
+    }
+
+    .btn-clear-history:active {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .history-item {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-item:active {
+      background: rgba(124, 58, 237, 0.1);
+    }
+
+    .history-item-word {
       font-weight: 700;
+      font-size: 15px;
+      color: var(--text-bright);
     }
 
-    .panel-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px 24px;
+    .history-item-essence {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 240px;
     }
 
-    .panel-body .empty-state {
+    .history-item-arrow {
+      color: var(--text-dim);
+      font-size: 18px;
+      flex-shrink: 0;
+      margin-left: 8px;
+    }
+
+    /* Empty state */
+    .empty-state {
       text-align: center;
-      padding: 40px;
-      color: var(--text-secondary);
+      padding: 60px 20px;
+    }
+
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.6;
+    }
+
+    .empty-state-text {
+      color: var(--text-dim);
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    /* Examples */
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .example-chip {
+      background: rgba(124, 58, 237, 0.12);
+      border: 1px solid rgba(124, 58, 237, 0.25);
+      border-radius: 20px;
+      padding: 8px 16px;
+      color: #c084fc;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      font-family: inherit;
+    }
+
+    .example-chip:active {
+      background: rgba(124, 58, 237, 0.25);
+      transform: scale(0.95);
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 24px;
+      color: var(--text);
+      font-size: 14px;
+      z-index: 1000;
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Scrollbar */
+    .result-area::-webkit-scrollbar {
+      width: 4px;
+    }
+    .result-area::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .result-area::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    @media (max-width: 360px) {
+      .header h1 { font-size: 24px; }
+      .result-essence { font-size: 18px; }
+      .result-input-word { font-size: 20px; }
     }
   </style>
 </head>
 <body>
-  <div class="app-container">
-    <!-- Header -->
-    <div class="header">
-      <div class="header-left">
-        <h1>EC <span>Mail Desk</span></h1>
-      </div>
-      <div class="header-actions">
-        <button class="header-btn" onclick="showView('inbox')" title="受信トレイ">&#x1F4E8;</button>
-        <button class="header-btn" onclick="showView('knowledge')" title="ナレッジ">&#x1F4DA;</button>
-        <button class="header-btn" onclick="openSettings()" title="設定">&#x2699;</button>
+  <div class="bg-effect"></div>
+
+  <div class="app">
+    <header class="header">
+      <div class="header-icon">&#x1F52E;</div>
+      <h1>本質チェッカー</h1>
+      <p>言葉の本質を見抜く</p>
+    </header>
+
+    <div class="input-area">
+      <div class="input-wrapper">
+        <input type="text" id="wordInput" placeholder="言葉を入力..." autocomplete="off" enterkeyhint="search">
+        <button class="btn-check" id="checkBtn" onclick="checkEssence()">診断</button>
       </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-      <!-- Sidebar: Mail List -->
-      <div class="mail-sidebar mobile-show" id="mailSidebar">
-        <div class="platform-tabs">
-          <button class="platform-tab active" data-platform="all" onclick="filterPlatform('all')">
-            すべて <span class="tab-count" id="countAll">0</span>
-          </button>
-          <button class="platform-tab" data-platform="rakuten" onclick="filterPlatform('rakuten')">
-            楽天 <span class="tab-count" id="countRakuten">0</span>
-          </button>
-          <button class="platform-tab" data-platform="yahoo" onclick="filterPlatform('yahoo')">
-            Yahoo <span class="tab-count" id="countYahoo">0</span>
-          </button>
-          <button class="platform-tab" data-platform="other" onclick="filterPlatform('other')">
-            その他 <span class="tab-count" id="countOther">0</span>
-          </button>
+    <div class="result-area" id="resultArea">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-state-icon">&#x1F9E0;</div>
+        <div class="empty-state-text">
+          言葉を入力して<br>その本質を暴きましょう
         </div>
-        <div class="search-bar">
-          <input type="text" class="search-input" id="searchInput" placeholder="メールを検索..." oninput="renderMailList()">
-        </div>
-        <div class="mail-list" id="mailList"></div>
+        <div class="examples" id="examples"></div>
       </div>
-
-      <!-- Mail Detail (default view) -->
-      <div class="mail-detail" id="mailDetailPanel">
-        <div class="mail-detail-empty" id="mailEmpty">
-          <div class="empty-icon">&#x1F4EC;</div>
-          <p>メールを選択してください</p>
-          <p style="font-size:12px">左のリストからメールを選ぶか、「+」で新規追加</p>
-        </div>
-        <div class="mail-detail-content" id="mailDetailContent" style="display:none">
-          <div class="detail-header">
-            <button class="mobile-back" onclick="mobileBack()">&#x2190; 戻る</button>
-            <div class="detail-subject" id="detailSubject"></div>
-            <div class="detail-meta" id="detailMeta"></div>
-          </div>
-          <div class="detail-body-wrapper">
-            <div class="detail-body" id="detailBody"></div>
-          </div>
-          <div class="reply-section">
-            <div class="reply-actions">
-              <button class="btn btn-primary" onclick="generateReply()" id="generateBtn">
-                &#x2728; 返信を作成
-              </button>
-              <button class="btn btn-secondary" onclick="clearReply()">クリア</button>
-              <button class="btn btn-success" onclick="markReplied()" id="sendBtn" style="margin-left:auto">
-                &#x2714; 返信済みにする
-              </button>
-            </div>
-            <textarea class="reply-textarea" id="replyText" placeholder="ここに返信文が生成されます。手動で編集も可能です。"></textarea>
-            <div class="reply-status" id="replyStatus"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Knowledge Panel -->
-      <div class="side-panel" id="knowledgePanel">
-        <div class="panel-header">
-          <h2>&#x1F4DA; ナレッジベース</h2>
-          <button class="btn btn-primary" onclick="openKnowledgeModal()">+ 追加</button>
-        </div>
-        <div class="panel-body">
-          <div class="knowledge-list" id="knowledgeList"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Nav (Mobile) -->
-    <div class="bottom-nav">
-      <button class="nav-item active" data-nav="inbox" onclick="showView('inbox')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
-        受信
-      </button>
-      <button class="nav-item" data-nav="knowledge" onclick="showView('knowledge')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-        ナレッジ
-      </button>
-      <button class="nav-item" data-nav="settings" onclick="openSettings()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-        設定
-      </button>
     </div>
   </div>
 
-  <!-- FAB -->
-  <button class="fab" onclick="openAddMailModal()" title="メールを追加">+</button>
-
-  <!-- Add Mail Modal -->
-  <div class="modal-overlay" id="addMailModal">
-    <div class="modal">
-      <h2>&#x1F4E9; メールを追加 <button class="modal-close" onclick="closeModal('addMailModal')">&times;</button></h2>
-      <form onsubmit="addMail(event)">
-        <div class="form-group">
-          <label>プラットフォーム</label>
-          <select id="mailPlatform">
-            <option value="rakuten">楽天RMS</option>
-            <option value="yahoo">Yahoo!ストアクリエーター</option>
-            <option value="other">その他</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>送信者名</label>
-          <input type="text" id="mailSender" placeholder="例: 山田太郎 様" required>
-        </div>
-        <div class="form-group">
-          <label>メールアドレス</label>
-          <input type="email" id="mailEmail" placeholder="例: yamada@example.com">
-        </div>
-        <div class="form-group">
-          <label>件名</label>
-          <input type="text" id="mailSubject" placeholder="例: 商品の返品について" required>
-        </div>
-        <div class="form-group">
-          <label>本文</label>
-          <textarea id="mailBody" placeholder="メール本文を貼り付けてください" required></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px">追加する</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Knowledge Modal -->
-  <div class="modal-overlay" id="knowledgeModal">
-    <div class="modal">
-      <h2>&#x1F4DD; ナレッジ追加 <button class="modal-close" onclick="closeModal('knowledgeModal')">&times;</button></h2>
-      <form onsubmit="addKnowledge(event)">
-        <div class="form-group">
-          <label>カテゴリ</label>
-          <select id="knowledgeCategory">
-            <option value="返品・返金">返品・返金</option>
-            <option value="配送・送料">配送・送料</option>
-            <option value="在庫・入荷">在庫・入荷</option>
-            <option value="商品不良">商品不良</option>
-            <option value="注文変更">注文変更</option>
-            <option value="クーポン・ポイント">クーポン・ポイント</option>
-            <option value="挨拶・お礼">挨拶・お礼</option>
-            <option value="その他">その他</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>タイトル（キーワード）</label>
-          <input type="text" id="knowledgeTitle" placeholder="例: 返品ポリシー" required>
-        </div>
-        <div class="form-group">
-          <label>内容（テンプレート返信文）</label>
-          <textarea id="knowledgeBody" placeholder="このナレッジに基づいて返信が生成されます" required style="min-height:160px"></textarea>
-        </div>
-        <input type="hidden" id="knowledgeEditId" value="">
-        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" id="knowledgeSubmitBtn">追加する</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Settings Modal -->
-  <div class="modal-overlay" id="settingsModal">
-    <div class="modal">
-      <h2>&#x2699; 設定 <button class="modal-close" onclick="closeModal('settingsModal')">&times;</button></h2>
-      <div class="settings-section">
-        <h3>AI API設定（任意）</h3>
-        <div class="form-group">
-          <label>APIキー（OpenAI or Anthropic）</label>
-          <input type="password" class="api-key-input" id="apiKeyInput" placeholder="sk-... or sk-ant-...">
-        </div>
-        <div class="form-group">
-          <label>APIプロバイダ</label>
-          <select id="apiProvider">
-            <option value="none">使用しない（ナレッジのみ）</option>
-            <option value="openai">OpenAI (GPT)</option>
-            <option value="anthropic">Anthropic (Claude)</option>
-          </select>
-        </div>
-        <p class="settings-note">APIキーはブラウザのローカルストレージに保存され、外部には送信されません（API呼び出し時を除く）。<br>APIを設定しない場合、ナレッジベースからのテンプレートマッチングで返信を生成します。</p>
-      </div>
-      <div class="settings-section">
-        <h3>店舗情報</h3>
-        <div class="form-group">
-          <label>店舗名</label>
-          <input type="text" id="shopName" placeholder="例: ○○ショップ">
-        </div>
-        <div class="form-group">
-          <label>署名（返信末尾に付与）</label>
-          <textarea id="shopSignature" placeholder="例:&#10;─────────────&#10;○○ショップ カスタマーサポート&#10;TEL: 03-XXXX-XXXX&#10;営業時間: 平日 9:00〜18:00" style="min-height:100px"></textarea>
-        </div>
-      </div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="saveSettings()">保存する</button>
-    </div>
-  </div>
+  <div class="toast" id="toast"></div>
 
   <script>
-    // ===== State =====
-    let emails = JSON.parse(localStorage.getItem('ecmaildesk_emails') || '[]');
-    let knowledge = JSON.parse(localStorage.getItem('ecmaildesk_knowledge') || '[]');
-    let settings = JSON.parse(localStorage.getItem('ecmaildesk_settings') || '{}');
-    let currentPlatform = 'all';
-    let selectedMailId = null;
-    let currentView = 'inbox';
+    // ==============================
+    // 本質データベース
+    // ==============================
+    const essenceDB = {
+      // 感情・心理
+      '愛': {
+        essence: '自分の弱さを誰かに預ける勇気',
+        detail: '愛とは相手への執着ではなく、自分の不完全さを認めたうえで、それでも誰かとつながろうとする行為。つまり、最も勇敢な自己開示である。'
+      },
+      '幸せ': {
+        essence: '比較をやめた瞬間の心の静けさ',
+        detail: '幸せは何かを手に入れた状態ではなく、「もっと」を求めることを一時停止できたときに訪れる。足るを知る、という古い言葉の正体がこれ。'
+      },
+      '怒り': {
+        essence: '期待が裏切られたときの防衛反応',
+        detail: '怒りの根底には必ず「こうあるべき」という期待がある。つまり、怒っている人は本当は傷ついている人。怒りは二次感情に過ぎない。'
+      },
+      '悲しみ': {
+        essence: '大切だったものの輪郭を確認する作業',
+        detail: '悲しみを感じるということは、そこに確かに大切なものがあった証拠。悲しみの深さは、愛の深さの裏返し。'
+      },
+      '不安': {
+        essence: 'まだ起きていない未来への前払い',
+        detail: '不安の96%は実際には起こらないとされる。つまり不安とは、存在しない問題に対する実在する苦痛。脳の過剰な危機管理機能。'
+      },
+      '嫉妬': {
+        essence: '自分が本当に欲しいものを教えてくれるセンサー',
+        detail: '嫉妬は醜い感情とされるが、実は最も正直な欲望の表れ。嫉妬の対象を分析すれば、自分が本当に求めているものが見える。'
+      },
+      '孤独': {
+        essence: '自分自身と向き合うための強制ログアウト',
+        detail: '孤独は不幸ではなく、社会的ノイズから離れて自分の内面と対話する貴重な時間。偉大な創造はたいてい孤独から生まれる。'
+      },
+      '優しさ': {
+        essence: '痛みを知った人だけが持てる想像力',
+        detail: '本当の優しさは性格ではなく能力。自分が傷ついた経験があるからこそ、他人の痛みを想像できる。優しさとは共感の実践。'
+      },
+      '勇気': {
+        essence: '恐怖を感じたまま一歩踏み出すこと',
+        detail: '勇気とは恐怖がない状態ではない。怖いと感じながらも行動を選ぶこと。恐怖のない行動は勇気ではなく、ただの無知。'
+      },
+      '希望': {
+        essence: 'まだ見ぬ可能性に賭ける非合理な選択',
+        detail: '合理的に考えれば諦めるべき状況でも「それでも」と思えること。希望は根拠のない楽観ではなく、意志の力で未来を信じる行為。'
+      },
+      '自信': {
+        essence: '失敗しても大丈夫だと思える安心感',
+        detail: '自信とは「必ず成功する」という確信ではなく、「失敗しても自分は立ち直れる」という信頼。自信の本体は成功体験ではなく回復体験。'
+      },
+      'プライド': {
+        essence: '他人の評価で自分の価値を測る習慣',
+        detail: 'プライドが高い人ほど実は自己評価が不安定。本当に自分に自信がある人はプライドを必要としない。プライドは鎧であり、脆さの証。'
+      },
 
-    // ===== Init =====
+      // 社会・仕事
+      '仕事': {
+        essence: '他人の問題を解決して対価を得る仕組み',
+        detail: 'どんな仕事も突き詰めれば「誰かの困りごとを解消すること」に行き着く。報酬は解決した問題の大きさと希少性に比例する。'
+      },
+      'お金': {
+        essence: '信用を数値化したもの',
+        detail: 'お金そのものには価値はない。「みんながこれに価値があると信じている」という共同幻想。つまりお金とは、社会全体の信頼のスコアボード。'
+      },
+      '成功': {
+        essence: '自分で定義しない限り永遠に手に入らないもの',
+        detail: '成功の定義を他人や社会に委ねると、ゴールは常に移動し続ける。成功とは状態ではなく、自分なりの基準を持てたかどうか。'
+      },
+      '努力': {
+        essence: '正しい方向に向けた時間の投資',
+        detail: '努力は美徳とされるが、方向を間違えた努力は消耗でしかない。本質的な努力とは「何をやるか」の選択と「やり続ける」の実行のセット。'
+      },
+      '才能': {
+        essence: '努力を努力と感じない相性の良さ',
+        detail: '才能がある分野では、他人が苦痛に感じる反復を自然にこなせる。天才とは、自分にとっての「遊び」がたまたま社会に価値を提供できた人。'
+      },
+      '教育': {
+        essence: '答えの教え方ではなく、問いの立て方を伝えること',
+        detail: '知識を詰め込むのは教育の表面。本質は「自分で考える力」を育てること。良い教育者は答えを与えず、良い問いを投げかける。'
+      },
+      '政治': {
+        essence: '限られた資源を誰にどう配るかの意思決定',
+        detail: '政治とは理想論ではなく、現実の制約の中でのトレードオフの連続。全員が満足する答えは存在しないという前提から始まる。'
+      },
+      '自由': {
+        essence: '選択の結果を自分で引き受ける覚悟',
+        detail: '自由とは「何でもできる」ことではなく、「選んだ結果の責任を取る」こと。責任なき自由はただのわがまま。'
+      },
+      '正義': {
+        essence: '立場が変われば形が変わる相対的な信念',
+        detail: '正義は絶対的なものではなく、視点によって変わる。すべての戦争は双方が「正義」を掲げて行われてきた。'
+      },
+      'SNS': {
+        essence: '承認欲求を効率的に満たすための装置',
+        detail: 'SNSの本質は情報共有ではなく、「いいね」という形の承認を最も手軽に得られるシステム。人間の承認欲求をハックしたビジネスモデル。'
+      },
+      '常識': {
+        essence: '多数派の思い込みに付けられた権威ある名前',
+        detail: '常識は時代や文化で変わる。50年前の常識は今の非常識。常識とは「今この場所で多くの人がそう思っている」以上の意味はない。'
+      },
+
+      // 人間関係
+      '友情': {
+        essence: '利害関係なしに時間を共有できる信頼',
+        detail: '友情の本質は「一緒にいて得をするから」ではなく「一緒にいて心地よいから」。損得を超えた関係性こそが友情の証。'
+      },
+      '結婚': {
+        essence: '「この人の問題も引き受ける」という契約',
+        detail: '結婚はロマンスの延長ではなく、相手の欠点・問題・面倒も含めて人生を共有するという現実的な決断。覚悟の儀式。'
+      },
+      '家族': {
+        essence: '選べないからこそ鍛えられる人間関係の原型',
+        detail: '家族は最初の社会。選べない関係の中で、忍耐・愛情・葛藤・許しを学ぶ。家族関係のパターンは、その後のすべての人間関係に影響する。'
+      },
+      '信頼': {
+        essence: '裏切られるリスクを承知で相手に委ねること',
+        detail: '信頼とは「絶対に裏切らない」という確信ではなく、裏切られる可能性を受け入れたうえでの選択。だからこそ価値がある。'
+      },
+      'コミュニケーション': {
+        essence: '自分の世界と相手の世界のすり合わせ',
+        detail: '人はそれぞれ異なる前提・経験・感情を持っている。コミュニケーションとは情報伝達ではなく、異なる主観世界間の翻訳作業。'
+      },
+
+      // テクノロジー
+      'AI': {
+        essence: 'パターン認識を極限まで高速化した計算',
+        detail: 'AIは「考えている」のではなく、膨大なデータからパターンを見つけて再現している。知性の模倣であり、知性そのものではない（今のところ）。'
+      },
+      '人工知能': {
+        essence: '人間の知的作業を模倣する統計マシン',
+        detail: '「知能」という名前がついているが、理解や意識があるわけではない。大量のデータから確率的に最も適切な出力を選んでいるだけ。'
+      },
+      'インターネット': {
+        essence: '人類の集合知と集合愚を同時に実現した発明',
+        detail: '情報へのアクセスを民主化した一方で、デマや分断も加速させた。インターネットは道具であり、使う人間の本質を増幅する鏡。'
+      },
+      'スマホ': {
+        essence: '人間の能力を拡張する外付け脳',
+        detail: '記憶・計算・通信・ナビゲーション…かつて人間が頭でやっていたことの多くをスマホが代行している。便利だが、依存すると自力が衰える。'
+      },
+      'プログラミング': {
+        essence: '曖昧な要望を厳密な手順に翻訳する技術',
+        detail: 'プログラミングの難しさはコードを書くことではなく、人間の曖昧な「こうしたい」を機械が理解できる正確な指示に変換すること。'
+      },
+
+      // 生活
+      'ダイエット': {
+        essence: '食欲という本能と理性の終わりなき交渉',
+        detail: '数万年かけて「食べられるときに食べろ」と最適化された本能に、理性で抵抗する行為。だから難しくて当然。根性の問題ではない。'
+      },
+      '料理': {
+        essence: '素材の可能性を引き出す変換作業',
+        detail: '料理は「食べられるものを作る」以上に、素材が持つポテンシャルを熱・調味・組み合わせで最大化する創造行為。'
+      },
+      '睡眠': {
+        essence: '脳のメンテナンスとデータ整理の時間',
+        detail: '睡眠中に脳は記憶の整理・不要情報の削除・細胞の修復を行っている。寝ることは怠けではなく、最も生産的な行為の一つ。'
+      },
+      '旅行': {
+        essence: '日常の座標系をリセットする体験',
+        detail: '旅行の価値は観光地を見ることではなく、普段の環境から離れることで「当たり前」を再発見すること。帰ってきた時に見える景色が変わる。'
+      },
+      '読書': {
+        essence: '他人の人生を低コストで追体験するシミュレーター',
+        detail: '一冊の本は著者が何年もかけて得た知見の圧縮ファイル。読書はそれを数時間で解凍して自分の経験に統合できる、最もコスパの良い学習法。'
+      },
+      '音楽': {
+        essence: '言語化できない感情を振動で伝える手段',
+        detail: '言葉では表現しきれない感情を、音の振動パターンで直接心に届ける。音楽が国境を超えるのは、言語を介さないから。'
+      },
+
+      // 抽象概念
+      '時間': {
+        essence: '変化を認識するための人間の発明',
+        detail: '時間そのものが存在するのではなく、物事が変化することを人間が「時間が流れている」と解釈している。時計は変化の速度を測る道具。'
+      },
+      '人生': {
+        essence: '意味を自分で書き込む白紙のノート',
+        detail: '人生にあらかじめ用意された意味はない。だからこそ自分で意味を作れる。これは絶望ではなく、究極の自由。'
+      },
+      '死': {
+        essence: '人生に締め切りを与えることで価値を生む仕組み',
+        detail: '永遠に生きられるなら、今日やる理由はなくなる。死があるからこそ時間に限りがあり、限りがあるからこそ選択に重みが生まれる。'
+      },
+      '運': {
+        essence: '準備と機会が交差した瞬間の別名',
+        detail: '運が良い人は、チャンスが来る前に準備を終えている人。運とは偶然ではなく、準備×認識力×行動力の掛け算。'
+      },
+      '夢': {
+        essence: '現状の自分と理想の自分との距離',
+        detail: '夢を語ることは簡単だが、その距離を埋める行動を続けることが難しい。夢は目的地ではなく、方向を示すコンパス。'
+      },
+      '真実': {
+        essence: '誰も完全には把握できない全体像の断片',
+        detail: '人はそれぞれの立場から真実の一部だけを見ている。「自分が見ている真実が全てだ」と思った瞬間、真実から遠ざかる。'
+      },
+      '美': {
+        essence: '脳が「生存に有利」と判断したパターンへの快感',
+        detail: '左右対称・黄金比・調和…美しいと感じるものの多くは、進化的に有利な特徴と相関している。美意識は生存本能が形を変えたもの。'
+      },
+      '言葉': {
+        essence: '思考を他者と共有するための不完全な圧縮ツール',
+        detail: '頭の中の複雑な思考や感情を言葉にする時点で、必ず情報は失われる。「言葉にできない」ものこそが、本当に大切なことが多い。'
+      },
+      '学び': {
+        essence: '昨日の自分を他人にする行為',
+        detail: '本当の学びとは知識が増えることではなく、世界の見え方が変わること。学んだ後の自分は、もう元の自分には戻れない。'
+      },
+      '失敗': {
+        essence: 'うまくいかない方法を一つ確定させた成果',
+        detail: '失敗は「終わり」ではなく「データ収集」。エジソンの名言通り、うまくいかない方法を発見したことは、成功への道を一つ絞り込んだということ。'
+      },
+      '普通': {
+        essence: '存在しない平均値を実在するかのように語る幻想',
+        detail: '「普通の人」は統計上の架空の存在。全ての項目で平均的な人間は実在しない。「普通でありたい」は、存在しないものになろうとする苦行。'
+      },
+      '退屈': {
+        essence: '脳が「今の刺激では足りない」と訴えるアラーム',
+        detail: '退屈は悪いことではなく、脳が新しい挑戦や創造を求めているサイン。歴史上の多くの発明は退屈から生まれた。'
+      },
+      '我慢': {
+        essence: '感情に支配されない技術としての自制',
+        detail: '我慢は美徳とされるが、無限の我慢は自己破壊。本質的な我慢は「今耐えれば後で良くなる」という見通しがある時にだけ有効。'
+      },
+      '天才': {
+        essence: '社会が後から貼るラベル',
+        detail: '本人は夢中でやっていただけなのに、結果が出たら「天才」と呼ばれる。天才は生まれつきの属性ではなく、社会の評価。'
+      },
+      '大人': {
+        essence: '感情のコントロール方法を覚えた子供',
+        detail: '年齢で大人になるのではなく、衝動をそのまま行動に移さず、一呼吸置けるようになった時に人は大人になる。中身はみんなまだ子供。'
+      },
+      '常識人': {
+        essence: '多数派に合わせるのが上手な人',
+        detail: '常識人とは正しい人ではなく、その場の空気を読んで多数派のふるまいを選べる人。常識は正しさとは無関係。'
+      },
+      'おしゃれ': {
+        essence: '他者の視線を意識した自己表現',
+        detail: 'おしゃれの本質は服ではなく「自分をどう見せたいか」という意志。だから同じ服でも着る人によっておしゃれ度が変わる。'
+      },
+      'ゲーム': {
+        essence: 'ルールのある安全な挑戦空間',
+        detail: '現実では失敗のコストが高いが、ゲームでは何度でもやり直せる。人間が挑戦と成長を安全に体験するための仮想訓練場。'
+      },
+      '健康': {
+        essence: '失って初めて存在に気づく日常の土台',
+        detail: '健康な時は健康を意識しない。意識するのは失った時だけ。健康とは「当たり前に動ける」という、最も贅沢な当たり前。'
+      },
+      '推し': {
+        essence: '自分の理想を他者に投影する情熱',
+        detail: '推しに夢中になるのは、自分が「こうありたい」「こういうものが好き」という価値観を、その人を通して確認しているから。推し活は自己理解の旅。'
+      },
+      '恋': {
+        essence: '脳内物質が作り出す一時的な判断力低下',
+        detail: 'ドーパミン・セロトニン・オキシトシンが一気に放出され、相手を実際以上に素晴らしく感じる。恋は脳のバグであり、種の存続のための仕掛け。'
+      },
+      '青春': {
+        essence: '失敗が許される期間限定の実験期間',
+        detail: '青春の価値は「何をしたか」ではなく「取り返しのつく時期にたくさん失敗できたか」。青春を懐かしむのは、あの自由な実験期間が終わったから。'
+      },
+      '学校': {
+        essence: '社会の縮小モデルで練習する場',
+        detail: '学校で学ぶ最も重要なことは教科の知識ではなく、異なる人間と共存する方法。教室は社会のプロトタイプ。'
+      },
+      '会社': {
+        essence: '個人ではできない規模の問題解決チーム',
+        detail: '会社の存在意義は利益ではなく、一人では解決できない大きな問題に集団で取り組めること。利益はその結果。'
+      },
+      '面接': {
+        essence: 'お互いの期待値をすり合わせる商談',
+        detail: '面接は「選ばれる場」ではなく「選び合う場」。会社も候補者も、お互いが求めるものを持っているか確認している。'
+      },
+      '飲み会': {
+        essence: 'アルコールで社会的仮面を緩める儀式',
+        detail: '素面では言えないことをお酒の力で言い合う場。つまり「本音を言ってもお酒のせいにできる」という暗黙の免責契約。'
+      }
+    };
+
+    // ==============================
+    // カテゴリ別テンプレート（未登録語用）
+    // ==============================
+    const essenceTemplates = [
+      {
+        pattern: (w) => '表面的には「' + w + '」だが、その奥にあるのは人間の根源的な欲求',
+        detail: (w) => '「' + w + '」という概念を掘り下げると、そこには必ず人間の本能的な欲求—承認・安全・つながり—のいずれかが隠れている。形を変えた欲求の表現に過ぎない。'
+      },
+      {
+        pattern: (w) => '「' + w + '」という名前をつけて安心したいだけの曖昧な概念',
+        detail: (w) => '人は理解できないものに名前をつけると安心する。「' + w + '」もまた、複雑な現象を一語に圧縮することで「わかった気」になるための便宜上のラベル。'
+      },
+      {
+        pattern: (w) => '誰かが得をするために定義された枠組み',
+        detail: (w) => '「' + w + '」の定義や価値基準を決めたのは誰か？を考えると、必ずそこに利害関係が見える。中立に見える概念ほど、誰かの意図が埋め込まれている。'
+      },
+      {
+        pattern: (w) => '時代が変われば意味が変わる、今だけの常識',
+        detail: (w) => '100年前の人に「' + w + '」を説明したら全く違う理解をされるだろう。今の意味も100年後には変わっている。本質とは「今この瞬間の多数派の解釈」。'
+      },
+      {
+        pattern: (w) => '「' + w + '」を必要とする自分の中の欠落',
+        detail: (w) => '「' + w + '」を求める時、人は自分に何かが足りないと感じている。つまり「' + w + '」の本質は、それ自体ではなく、それを求める側の心理にある。'
+      },
+      {
+        pattern: (w) => '複雑なものを単純に見せるための便利な記号',
+        detail: (w) => '「' + w + '」の一言で片付けてしまうが、実際には無数の要素が絡み合った複雑系。本質を一言で語ること自体が、本質から遠ざかる行為かもしれない。'
+      },
+      {
+        pattern: (w) => '社会が共有する幻想の一つ',
+        detail: (w) => '「' + w + '」は物理的に存在するものではなく、人々が「ある」と信じることで成立している。共同幻想が崩れた瞬間、その価値も消失する。'
+      },
+      {
+        pattern: (w) => '人間の不安を和らげるために生まれた仕組み',
+        detail: (w) => '「' + w + '」が存在する理由を辿ると、根底には人間の不安がある。未知への恐怖、孤独への恐怖、死への恐怖—それらを緩和する装置としての「' + w + '」。'
+      }
+    ];
+
+    // ==============================
+    // サンプルワード
+    // ==============================
+    const exampleWords = ['愛', 'お金', '努力', '自由', '普通', 'SNS', '才能', '人生', '推し', '失敗', 'AI', '幸せ'];
+
+    // ==============================
+    // 状態管理
+    // ==============================
+    let history = JSON.parse(localStorage.getItem('essenceHistory') || '[]');
+
+    // ==============================
+    // 初期化
+    // ==============================
     function init() {
-      // Load sample knowledge if empty
-      if (knowledge.length === 0) {
-        knowledge = [
-          {
-            id: 'k1', category: '返品・返金',
-            title: '返品対応の基本テンプレート',
-            body: 'この度はご不便をおかけし、誠に申し訳ございません。\n返品につきまして、以下の手順でお手続きをお願いいたします。\n\n1. 商品到着後7日以内にご連絡ください\n2. 未開封・未使用の場合のみ返品を承ります\n3. 返送料はお客様負担となります\n\n返品確認後、3〜5営業日以内にご返金いたします。'
-          },
-          {
-            id: 'k2', category: '配送・送料',
-            title: '配送状況の確認テンプレート',
-            body: 'お問い合わせいただきありがとうございます。\n配送状況を確認いたしましたところ、お荷物は現在【配送状況】となっております。\n\nお届け予定日: 【日付】\n追跡番号: 【番号】\n\n配送に遅延が発生している場合は、配送業者に確認の上、改めてご連絡いたします。'
-          },
-          {
-            id: 'k3', category: '商品不良',
-            title: '商品不良時の対応テンプレート',
-            body: 'この度はご迷惑をおかけし、大変申し訳ございません。\n商品の不良について確認させていただきたく存じます。\n\nお手数ですが、以下の情報をお知らせいただけますでしょうか。\n・不良箇所の写真\n・ご注文番号\n\n確認次第、交換品の発送または返金にて対応させていただきます。'
-          },
-          {
-            id: 'k4', category: '挨拶・お礼',
-            title: '購入お礼テンプレート',
-            body: 'この度は当店をご利用いただき、誠にありがとうございます。\n商品はお気に召していただけましたでしょうか。\n\nもしご不明な点やお気づきの点がございましたら、お気軽にお問い合わせください。\nまたのご利用を心よりお待ちしております。'
-          }
-        ];
-        saveKnowledge();
-      }
+      renderExamples();
+      renderInitialView();
 
-      // Load settings
-      if (settings.apiKey) document.getElementById('apiKeyInput').value = settings.apiKey;
-      if (settings.apiProvider) document.getElementById('apiProvider').value = settings.apiProvider;
-      if (settings.shopName) document.getElementById('shopName').value = settings.shopName;
-      if (settings.shopSignature) document.getElementById('shopSignature').value = settings.shopSignature;
-
-      renderMailList();
-      renderKnowledgeList();
-      updateCounts();
-    }
-
-    // ===== Save Functions =====
-    function saveEmails() {
-      localStorage.setItem('ecmaildesk_emails', JSON.stringify(emails));
-    }
-
-    function saveKnowledge() {
-      localStorage.setItem('ecmaildesk_knowledge', JSON.stringify(knowledge));
-    }
-
-    function saveSettings() {
-      settings = {
-        apiKey: document.getElementById('apiKeyInput').value.trim(),
-        apiProvider: document.getElementById('apiProvider').value,
-        shopName: document.getElementById('shopName').value.trim(),
-        shopSignature: document.getElementById('shopSignature').value.trim()
-      };
-      localStorage.setItem('ecmaildesk_settings', JSON.stringify(settings));
-      closeModal('settingsModal');
-      alert('設定を保存しました');
-    }
-
-    // ===== View Management =====
-    function showView(view) {
-      currentView = view;
-
-      // Update nav
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      const navBtn = document.querySelector(`[data-nav="${view}"]`);
-      if (navBtn) navBtn.classList.add('active');
-
-      // Toggle panels
-      document.getElementById('mailSidebar').style.display = '';
-      document.getElementById('mailDetailPanel').style.display = '';
-      document.getElementById('knowledgePanel').classList.remove('active');
-
-      if (view === 'inbox') {
-        document.getElementById('mailSidebar').classList.add('mobile-show');
-        document.getElementById('mailDetailPanel').style.display = '';
-        document.getElementById('knowledgePanel').classList.remove('active');
-      } else if (view === 'knowledge') {
-        if (window.innerWidth <= 768) {
-          document.getElementById('mailSidebar').classList.remove('mobile-show');
-          document.getElementById('mailDetailPanel').style.display = 'none';
-        } else {
-          document.getElementById('mailDetailPanel').style.display = 'none';
+      const input = document.getElementById('wordInput');
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          checkEssence();
         }
-        document.getElementById('knowledgePanel').classList.add('active');
+      });
+    }
+
+    function renderExamples() {
+      const container = document.getElementById('examples');
+      const shuffled = [...exampleWords].sort(() => Math.random() - 0.5).slice(0, 6);
+      container.innerHTML = shuffled.map(w =>
+        '<button class="example-chip" onclick="setWord(\'' + w + '\')">' + w + '</button>'
+      ).join('');
+    }
+
+    function renderInitialView() {
+      if (history.length > 0) {
+        renderHistory();
       }
     }
 
-    function mobileBack() {
-      document.getElementById('mailSidebar').classList.add('mobile-show');
-      document.getElementById('mailDetailPanel').classList.remove('mobile-show');
+    // ==============================
+    // メイン機能
+    // ==============================
+    function setWord(word) {
+      document.getElementById('wordInput').value = word;
+      checkEssence();
     }
 
-    // ===== Platform Filter =====
-    function filterPlatform(platform) {
-      currentPlatform = platform;
-      document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
-      document.querySelector(`[data-platform="${platform}"]`).classList.add('active');
-      renderMailList();
-    }
+    function checkEssence() {
+      const input = document.getElementById('wordInput');
+      const word = input.value.trim();
+      if (!word) return;
 
-    // ===== Render Mail List =====
-    function renderMailList() {
-      const list = document.getElementById('mailList');
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      let filtered = [...emails];
-
-      if (currentPlatform !== 'all') {
-        filtered = filtered.filter(m => m.platform === currentPlatform);
-      }
-
-      if (search) {
-        filtered = filtered.filter(m =>
-          m.sender.toLowerCase().includes(search) ||
-          m.subject.toLowerCase().includes(search) ||
-          m.body.toLowerCase().includes(search)
-        );
-      }
-
-      filtered.sort((a, b) => b.createdAt - a.createdAt);
-
-      if (filtered.length === 0) {
-        list.innerHTML = `
-          <div style="text-align:center;padding:40px 20px;color:var(--text-secondary)">
-            <div style="font-size:40px;margin-bottom:8px;opacity:0.3">&#x1F4EC;</div>
-            <p style="font-size:13px">メールがありません</p>
-            <p style="font-size:12px;margin-top:4px">「+」ボタンから追加してください</p>
-          </div>`;
-        return;
-      }
-
-      const platformTags = {
-        rakuten: '<span class="mail-tag tag-rakuten">楽天</span>',
-        yahoo: '<span class="mail-tag tag-yahoo">Yahoo</span>',
-        other: '<span class="mail-tag tag-other">その他</span>'
-      };
-
-      list.innerHTML = filtered.map(mail => `
-        <div class="mail-item ${mail.id === selectedMailId ? 'active' : ''} ${mail.read ? '' : 'unread'}"
-             onclick="selectMail('${mail.id}')">
-          <div class="mail-item-header">
-            <span class="mail-sender">${escapeHtml(mail.sender)}</span>
-            <span class="mail-time">${formatTime(mail.createdAt)}</span>
-          </div>
-          <div class="mail-subject">${escapeHtml(mail.subject)}</div>
-          <div class="mail-preview">${escapeHtml(mail.body.substring(0, 60))}</div>
-          <div class="mail-tags">
-            ${platformTags[mail.platform] || ''}
-            ${mail.replied ? '<span class="mail-tag tag-replied">返信済</span>' : '<span class="mail-tag tag-pending">未返信</span>'}
-          </div>
-        </div>
-      `).join('');
-
-      updateCounts();
-    }
-
-    // ===== Select Mail =====
-    function selectMail(id) {
-      selectedMailId = id;
-      const mail = emails.find(m => m.id === id);
-      if (!mail) return;
-
-      mail.read = true;
-      saveEmails();
-
-      document.getElementById('mailEmpty').style.display = 'none';
-      document.getElementById('mailDetailContent').style.display = 'flex';
-
-      document.getElementById('detailSubject').textContent = mail.subject;
-
-      const platformNames = { rakuten: '楽天RMS', yahoo: 'Yahoo!ストア', other: 'その他' };
-      document.getElementById('detailMeta').innerHTML = `
-        <span><strong>送信者:</strong> ${escapeHtml(mail.sender)} ${mail.email ? '&lt;' + escapeHtml(mail.email) + '&gt;' : ''}</span>
-        <span><strong>プラットフォーム:</strong> ${platformNames[mail.platform] || mail.platform}</span>
-        <span><strong>受信:</strong> ${new Date(mail.createdAt).toLocaleString('ja-JP')}</span>
-      `;
-
-      document.getElementById('detailBody').textContent = mail.body;
-      document.getElementById('replyText').value = mail.replyDraft || '';
-      document.getElementById('replyStatus').textContent = '';
-
-      // Mobile: show detail
-      if (window.innerWidth <= 768) {
-        document.getElementById('mailSidebar').classList.remove('mobile-show');
-        document.getElementById('mailDetailPanel').classList.add('mobile-show');
-      }
-
-      renderMailList();
-    }
-
-    // ===== Add Mail =====
-    function addMail(e) {
-      e.preventDefault();
-      const mail = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        platform: document.getElementById('mailPlatform').value,
-        sender: document.getElementById('mailSender').value.trim(),
-        email: document.getElementById('mailEmail').value.trim(),
-        subject: document.getElementById('mailSubject').value.trim(),
-        body: document.getElementById('mailBody').value.trim(),
-        read: false,
-        replied: false,
-        replyDraft: '',
-        createdAt: Date.now()
-      };
-
-      emails.unshift(mail);
-      saveEmails();
-      closeModal('addMailModal');
-      e.target.reset();
-      renderMailList();
-      updateCounts();
-    }
-
-    // ===== Generate Reply =====
-    async function generateReply() {
-      const mail = emails.find(m => m.id === selectedMailId);
-      if (!mail) return;
-
-      const btn = document.getElementById('generateBtn');
-      const status = document.getElementById('replyStatus');
-
+      const btn = document.getElementById('checkBtn');
       btn.disabled = true;
-      status.innerHTML = '<span class="generating-indicator"><span></span><span></span><span></span></span> 返信を生成中...';
 
-      try {
-        let reply = '';
+      // Show loading
+      const resultArea = document.getElementById('resultArea');
+      resultArea.innerHTML = '<div class="loading"><div class="loading-dots"><span></span><span></span><span></span></div><div class="loading-text">本質を解析中...</div></div>';
 
-        if (settings.apiProvider === 'openai' && settings.apiKey) {
-          reply = await generateWithOpenAI(mail);
-        } else if (settings.apiProvider === 'anthropic' && settings.apiKey) {
-          reply = await generateWithAnthropic(mail);
-        } else {
-          reply = generateFromKnowledge(mail);
-        }
-
-        // Add signature
-        if (settings.shopSignature) {
-          reply += '\n\n' + settings.shopSignature;
-        }
-
-        document.getElementById('replyText').value = reply;
-        mail.replyDraft = reply;
-        saveEmails();
-        status.textContent = '&#x2714; 生成完了';
-
-      } catch (err) {
-        status.textContent = 'エラー: ' + err.message;
-      }
-
-      btn.disabled = false;
+      // Simulate analysis time
+      const delay = 800 + Math.random() * 1200;
+      setTimeout(() => {
+        const result = getEssence(word);
+        showResult(word, result);
+        saveToHistory(word, result);
+        btn.disabled = false;
+        input.value = '';
+        input.focus();
+      }, delay);
     }
 
-    // ===== Knowledge-based Reply =====
-    function generateFromKnowledge(mail) {
-      const text = (mail.subject + ' ' + mail.body).toLowerCase();
+    function getEssence(word) {
+      // Check exact match
+      if (essenceDB[word]) {
+        return essenceDB[word];
+      }
 
-      // Keyword matching
-      const keywords = {
-        '返品': ['返品', '返金', '返送', 'キャンセル', '取り消し'],
-        '配送': ['配送', '届か', '届い', '発送', '送料', '追跡', '遅延', '遅い'],
-        '在庫': ['在庫', '入荷', '品切', '売り切', '再入荷'],
-        '不良': ['不良', '壊れ', '破損', '傷', '汚れ', '違う商品', '間違'],
-        '変更': ['変更', 'キャンセル', '住所', '数量'],
-        'クーポン': ['クーポン', 'ポイント', '割引', 'セール'],
-        'お礼': ['ありがとう', 'お礼', '感謝', 'レビュー']
+      // Check partial matches
+      for (const key of Object.keys(essenceDB)) {
+        if (word.includes(key) || key.includes(word)) {
+          return {
+            essence: essenceDB[key].essence,
+            detail: '「' + word + '」→「' + key + '」として分析。' + essenceDB[key].detail
+          };
+        }
+      }
+
+      // Generate from templates
+      return generateEssence(word);
+    }
+
+    function generateEssence(word) {
+      // Use a hash of the word to consistently select a template
+      let hash = 0;
+      for (let i = 0; i < word.length; i++) {
+        hash = ((hash << 5) - hash) + word.charCodeAt(i);
+        hash = hash & hash;
+      }
+      const index = Math.abs(hash) % essenceTemplates.length;
+      const template = essenceTemplates[index];
+
+      return {
+        essence: template.pattern(word),
+        detail: template.detail(word)
       };
-
-      const categoryMap = {
-        '返品': '返品・返金',
-        '配送': '配送・送料',
-        '在庫': '在庫・入荷',
-        '不良': '商品不良',
-        '変更': '注文変更',
-        'クーポン': 'クーポン・ポイント',
-        'お礼': '挨拶・お礼'
-      };
-
-      // Find best matching category
-      let bestCategory = null;
-      let bestScore = 0;
-
-      for (const [key, words] of Object.entries(keywords)) {
-        const score = words.filter(w => text.includes(w)).length;
-        if (score > bestScore) {
-          bestScore = score;
-          bestCategory = categoryMap[key];
-        }
-      }
-
-      // Find matching knowledge
-      let matchedKnowledge = [];
-      if (bestCategory) {
-        matchedKnowledge = knowledge.filter(k => k.category === bestCategory);
-      }
-
-      if (matchedKnowledge.length === 0) {
-        matchedKnowledge = knowledge;
-      }
-
-      // Build reply
-      const shopName = settings.shopName || '当店';
-      const senderName = mail.sender.replace(/\s*様$/, '');
-
-      let reply = `${senderName} 様\n\nお問い合わせいただきありがとうございます。\n${shopName}カスタマーサポートでございます。\n\n`;
-
-      if (matchedKnowledge.length > 0) {
-        reply += matchedKnowledge[0].body;
-      } else {
-        reply += 'お問い合わせ内容を確認いたしました。\n詳細を確認の上、改めてご連絡させていただきます。\n\n何卒よろしくお願いいたします。';
-      }
-
-      reply += `\n\n${shopName}`;
-
-      return reply;
     }
 
-    // ===== OpenAI API =====
-    async function generateWithOpenAI(mail) {
-      const knowledgeContext = knowledge.map(k =>
-        `【${k.category}】${k.title}\n${k.body}`
-      ).join('\n\n---\n\n');
-
-      const shopName = settings.shopName || '当店';
-
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + settings.apiKey
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: `あなたはEC店舗「${shopName}」のカスタマーサポートです。以下のナレッジベースを参照して、丁寧で適切な返信メールを作成してください。\n\n【ナレッジベース】\n${knowledgeContext}`
-            },
-            {
-              role: 'user',
-              content: `以下のお客様メールに対する返信を作成してください。\n\n送信者: ${mail.sender}\n件名: ${mail.subject}\n本文:\n${mail.body}`
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 1000
-        })
-      });
-
-      if (!res.ok) throw new Error('API呼び出しに失敗しました');
-      const data = await res.json();
-      return data.choices[0].message.content;
-    }
-
-    // ===== Anthropic API =====
-    async function generateWithAnthropic(mail) {
-      const knowledgeContext = knowledge.map(k =>
-        `【${k.category}】${k.title}\n${k.body}`
-      ).join('\n\n---\n\n');
-
-      const shopName = settings.shopName || '当店';
-
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': settings.apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1000,
-          system: `あなたはEC店舗「${shopName}」のカスタマーサポートです。以下のナレッジベースを参照して、丁寧で適切な返信メールを作成してください。\n\n【ナレッジベース】\n${knowledgeContext}`,
-          messages: [
-            {
-              role: 'user',
-              content: `以下のお客様メールに対する返信を作成してください。\n\n送信者: ${mail.sender}\n件名: ${mail.subject}\n本文:\n${mail.body}`
-            }
-          ]
-        })
-      });
-
-      if (!res.ok) throw new Error('API呼び出しに失敗しました');
-      const data = await res.json();
-      return data.content[0].text;
-    }
-
-    // ===== Mark Replied =====
-    function markReplied() {
-      const mail = emails.find(m => m.id === selectedMailId);
-      if (!mail) return;
-
-      const replyText = document.getElementById('replyText').value.trim();
-      if (!replyText) {
-        alert('返信文を入力または生成してください');
-        return;
-      }
-
-      mail.replied = true;
-      mail.replyDraft = replyText;
-      mail.repliedAt = Date.now();
-      saveEmails();
-      renderMailList();
-      document.getElementById('replyStatus').textContent = '&#x2714; 返信済みにしました';
-    }
-
-    function clearReply() {
-      document.getElementById('replyText').value = '';
-      document.getElementById('replyStatus').textContent = '';
-    }
-
-    // ===== Knowledge =====
-    function renderKnowledgeList() {
-      const list = document.getElementById('knowledgeList');
-
-      if (knowledge.length === 0) {
-        list.innerHTML = '<div class="empty-state"><p>ナレッジがありません</p></div>';
-        return;
-      }
-
-      list.innerHTML = knowledge.map(k => `
-        <div class="knowledge-item">
-          <div class="knowledge-item-title">
-            ${escapeHtml(k.title)}
-            <span class="knowledge-item-category">${escapeHtml(k.category)}</span>
-          </div>
-          <div class="knowledge-item-body">${escapeHtml(k.body)}</div>
-          <div class="knowledge-item-actions">
-            <button onclick="editKnowledge('${k.id}')">編集</button>
-            <button class="btn-delete" onclick="deleteKnowledge('${k.id}')">削除</button>
+    // ==============================
+    // 表示
+    // ==============================
+    function showResult(word, result) {
+      const resultArea = document.getElementById('resultArea');
+      resultArea.innerHTML = `
+        <div class="result-card">
+          <div class="result-word">INPUT</div>
+          <div class="result-input-word">${escapeHtml(word)}</div>
+          <div class="result-label">ESSENCE</div>
+          <div class="result-essence">${escapeHtml(result.essence)}</div>
+          <div class="result-detail">${escapeHtml(result.detail)}</div>
+          <div class="result-actions">
+            <button class="btn-action" onclick="shareResult('${escapeAttr(word)}', '${escapeAttr(result.essence)}')">共有する</button>
+            <button class="btn-action" onclick="checkAnother()">もう一度</button>
           </div>
         </div>
-      `).join('');
+        ${history.length > 0 ? renderHistoryHTML() : ''}
+      `;
+      resultArea.scrollTop = 0;
     }
 
-    function openKnowledgeModal() {
-      document.getElementById('knowledgeEditId').value = '';
-      document.getElementById('knowledgeSubmitBtn').textContent = '追加する';
-      document.getElementById('knowledgeModal').querySelector('h2').innerHTML =
-        '&#x1F4DD; ナレッジ追加 <button class="modal-close" onclick="closeModal(\'knowledgeModal\')">&times;</button>';
-      document.getElementById('knowledgeModal').classList.add('active');
-    }
-
-    function addKnowledge(e) {
-      e.preventDefault();
-      const editId = document.getElementById('knowledgeEditId').value;
-      const item = {
-        id: editId || Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        category: document.getElementById('knowledgeCategory').value,
-        title: document.getElementById('knowledgeTitle').value.trim(),
-        body: document.getElementById('knowledgeBody').value.trim()
-      };
-
-      if (editId) {
-        const idx = knowledge.findIndex(k => k.id === editId);
-        if (idx >= 0) knowledge[idx] = item;
-      } else {
-        knowledge.push(item);
+    function renderHistory() {
+      const resultArea = document.getElementById('resultArea');
+      const emptyState = document.getElementById('emptyState');
+      if (emptyState) {
+        resultArea.innerHTML = emptyState.outerHTML + renderHistoryHTML();
       }
-
-      saveKnowledge();
-      closeModal('knowledgeModal');
-      e.target.reset();
-      document.getElementById('knowledgeEditId').value = '';
-      renderKnowledgeList();
     }
 
-    function editKnowledge(id) {
-      const k = knowledge.find(item => item.id === id);
-      if (!k) return;
-
-      document.getElementById('knowledgeEditId').value = k.id;
-      document.getElementById('knowledgeCategory').value = k.category;
-      document.getElementById('knowledgeTitle').value = k.title;
-      document.getElementById('knowledgeBody').value = k.body;
-      document.getElementById('knowledgeSubmitBtn').textContent = '更新する';
-      document.getElementById('knowledgeModal').querySelector('h2').innerHTML =
-        '&#x1F4DD; ナレッジ編集 <button class="modal-close" onclick="closeModal(\'knowledgeModal\')">&times;</button>';
-      document.getElementById('knowledgeModal').classList.add('active');
+    function renderHistoryHTML() {
+      if (history.length === 0) return '';
+      return `
+        <div class="history-section">
+          <div class="history-title">
+            <span>履歴</span>
+            <button class="btn-clear-history" onclick="clearHistory()">クリア</button>
+          </div>
+          ${history.slice(0, 20).map(item => `
+            <div class="history-item" onclick="setWord('${escapeAttr(item.word)}')">
+              <div>
+                <div class="history-item-word">${escapeHtml(item.word)}</div>
+                <div class="history-item-essence">${escapeHtml(item.essence)}</div>
+              </div>
+              <div class="history-item-arrow">&#x203A;</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
     }
 
-    function deleteKnowledge(id) {
-      if (!confirm('このナレッジを削除しますか？')) return;
-      knowledge = knowledge.filter(k => k.id !== id);
-      saveKnowledge();
-      renderKnowledgeList();
+    // ==============================
+    // アクション
+    // ==============================
+    function checkAnother() {
+      document.getElementById('wordInput').focus();
     }
 
-    // ===== Counts =====
-    function updateCounts() {
-      document.getElementById('countAll').textContent = emails.length;
-      document.getElementById('countRakuten').textContent = emails.filter(m => m.platform === 'rakuten').length;
-      document.getElementById('countYahoo').textContent = emails.filter(m => m.platform === 'yahoo').length;
-      document.getElementById('countOther').textContent = emails.filter(m => m.platform === 'other').length;
+    async function shareResult(word, essence) {
+      const text = '【本質チェッカー】\n「' + word + '」の本質:\n→ ' + essence;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({ text: text });
+        } catch (e) {
+          copyToClipboard(text);
+        }
+      } else {
+        copyToClipboard(text);
+      }
     }
 
-    // ===== Modals =====
-    function openAddMailModal() { document.getElementById('addMailModal').classList.add('active'); }
-    function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
-
-    function closeModal(id) {
-      document.getElementById(id).classList.remove('active');
-    }
-
-    // Close modals on overlay click
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-      overlay.addEventListener('click', (e) => {
-        if (e.target === e.currentTarget) overlay.classList.remove('active');
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('コピーしました！');
+      }).catch(() => {
+        showToast('共有できませんでした');
       });
-    });
+    }
 
-    // ===== Utilities =====
-    function escapeHtml(text) {
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    // ==============================
+    // 履歴管理
+    // ==============================
+    function saveToHistory(word, result) {
+      // Remove duplicate
+      history = history.filter(item => item.word !== word);
+      // Add to beginning
+      history.unshift({ word: word, essence: result.essence });
+      // Keep last 50
+      history = history.slice(0, 50);
+      localStorage.setItem('essenceHistory', JSON.stringify(history));
+    }
+
+    function clearHistory() {
+      history = [];
+      localStorage.removeItem('essenceHistory');
+      showToast('履歴をクリアしました');
+      const historySection = document.querySelector('.history-section');
+      if (historySection) {
+        historySection.remove();
+      }
+    }
+
+    // ==============================
+    // ユーティリティ
+    // ==============================
+    function escapeHtml(str) {
       const div = document.createElement('div');
-      div.textContent = text;
+      div.textContent = str;
       return div.innerHTML;
     }
 
-    function formatTime(ts) {
-      const d = new Date(ts);
-      const now = new Date();
-      const diffMs = now - d;
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-
-      if (diffMins < 1) return 'たった今';
-      if (diffMins < 60) return diffMins + '分前';
-      if (diffHours < 24) return diffHours + '時間前';
-
-      const isThisYear = d.getFullYear() === now.getFullYear();
-      if (isThisYear) return `${d.getMonth()+1}/${d.getDate()}`;
-      return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+    function escapeAttr(str) {
+      return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
     }
 
-    // Service Worker
+    // ==============================
+    // PWA
+    // ==============================
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js');
+      navigator.serviceWorker.register('sw.js');
     }
 
-    // Init
+    // Initialize
     init();
   </script>
 </body>
