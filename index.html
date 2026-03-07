@@ -469,6 +469,165 @@
       border-radius: 2px;
     }
 
+    /* Settings button */
+    .btn-settings {
+      position: absolute;
+      top: 48px;
+      right: 0;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 22px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: color 0.2s, background 0.2s;
+      font-family: inherit;
+      line-height: 1;
+    }
+
+    .btn-settings:active {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+    }
+
+    .btn-settings.api-active {
+      color: var(--accent);
+    }
+
+    .header {
+      position: relative;
+    }
+
+    /* Settings modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 400px;
+      transform: translateY(20px);
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .modal-overlay.active .modal {
+      transform: translateY(0);
+    }
+
+    .modal h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 6px;
+    }
+
+    .modal p {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .modal label {
+      font-size: 12px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .modal input[type="password"],
+    .modal input[type="text"] {
+      width: 100%;
+      background: var(--bg-input);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: var(--text-bright);
+      outline: none;
+      transition: border-color 0.3s;
+      font-family: monospace;
+      margin-bottom: 16px;
+    }
+
+    .modal input:focus {
+      border-color: var(--primary);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-modal {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+
+    .btn-modal-save {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      border: none;
+      color: white;
+    }
+
+    .btn-modal-cancel {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+
+    .btn-modal:active {
+      opacity: 0.8;
+    }
+
+    .api-badge {
+      display: inline-block;
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: var(--accent);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* Error state */
+    .result-error {
+      color: #f87171;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+
     @media (max-width: 360px) {
       .header h1 { font-size: 24px; }
       .result-essence { font-size: 18px; }
@@ -483,7 +642,8 @@
     <header class="header">
       <div class="header-icon">&#x1F52E;</div>
       <h1>本質チェッカー</h1>
-      <p>言葉の本質を見抜く</p>
+      <p>言葉の本質を見抜く<span class="api-badge" id="apiBadge" style="display:none">Gemini AI</span></p>
+      <button class="btn-settings" id="settingsBtn" onclick="openSettings()" title="設定">&#x2699;</button>
     </header>
 
     <div class="input-area">
@@ -505,6 +665,20 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <h2>Gemini AI 設定</h2>
+      <p>Google Gemini APIキーを設定すると、未登録の単語もAIが本質を分析します。キーはブラウザ内にのみ保存されます。</p>
+      <label for="apiKeyInput">API キー</label>
+      <input type="password" id="apiKeyInput" placeholder="AIza...">
+      <div class="modal-actions">
+        <button class="btn-modal btn-modal-cancel" onclick="closeSettings()">キャンセル</button>
+        <button class="btn-modal btn-modal-save" onclick="saveApiKey()">保存</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     // ==============================
@@ -831,6 +1005,7 @@
     // 状態管理
     // ==============================
     let history = JSON.parse(localStorage.getItem('essenceHistory') || '[]');
+    let geminiApiKey = localStorage.getItem('geminiApiKey') || '';
 
     // ==============================
     // 初期化
@@ -838,6 +1013,7 @@
     function init() {
       renderExamples();
       renderInitialView();
+      updateApiBadge();
 
       const input = document.getElementById('wordInput');
       input.addEventListener('keydown', (e) => {
@@ -845,6 +1021,11 @@
           e.preventDefault();
           checkEssence();
         }
+      });
+
+      // Close modal on overlay click
+      document.getElementById('settingsModal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeSettings();
       });
     }
 
@@ -870,7 +1051,7 @@
       checkEssence();
     }
 
-    function checkEssence() {
+    async function checkEssence() {
       const input = document.getElementById('wordInput');
       const word = input.value.trim();
       if (!word) return;
@@ -882,19 +1063,19 @@
       const resultArea = document.getElementById('resultArea');
       resultArea.innerHTML = '<div class="loading"><div class="loading-dots"><span></span><span></span><span></span></div><div class="loading-text">本質を解析中...</div></div>';
 
-      // Simulate analysis time
-      const delay = 800 + Math.random() * 1200;
-      setTimeout(() => {
-        const result = getEssence(word);
+      try {
+        const result = await getEssence(word);
         showResult(word, result);
         saveToHistory(word, result);
-        btn.disabled = false;
-        input.value = '';
-        input.focus();
-      }, delay);
+      } catch (e) {
+        resultArea.innerHTML = '<div class="result-card"><div class="result-error">エラーが発生しました: ' + escapeHtml(e.message) + '</div></div>';
+      }
+      btn.disabled = false;
+      input.value = '';
+      input.focus();
     }
 
-    function getEssence(word) {
+    async function getEssence(word) {
       // Check exact match
       if (essenceDB[word]) {
         return essenceDB[word];
@@ -910,7 +1091,12 @@
         }
       }
 
-      // Generate from templates
+      // Use Gemini API if available
+      if (geminiApiKey) {
+        return await callGeminiAPI(word);
+      }
+
+      // Fallback to templates
       return generateEssence(word);
     }
 
@@ -1051,6 +1237,99 @@
 
     function escapeAttr(str) {
       return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    // ==============================
+    // Gemini API連携
+    // ==============================
+    async function callGeminiAPI(word) {
+      const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(geminiApiKey);
+
+      const prompt = `あなたは哲学的で鋭い洞察を持つ「本質チェッカー」です。
+与えられた言葉の本質を見抜いてください。
+
+ルール:
+- 「essence」は30文字以内で、その言葉の本質を鋭く一言で表現する
+- 「detail」は100〜150文字程度で、なぜそれが本質なのかを説明する
+- 哲学的・皮肉・ウィットに富んだ表現で
+- 必ず以下のJSON形式のみで回答する（他のテキストは一切不要）
+
+{"essence": "本質の一言", "detail": "詳細な説明"}
+
+言葉: ${word}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.9,
+            maxOutputTokens: 300
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        const msg = err.error?.message || 'API呼び出しに失敗しました';
+        throw new Error(msg);
+      }
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+      // Extract JSON from response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('AIの応答を解析できませんでした');
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (!parsed.essence || !parsed.detail) {
+        throw new Error('AIの応答形式が不正です');
+      }
+
+      return { essence: parsed.essence, detail: parsed.detail };
+    }
+
+    // ==============================
+    // 設定管理
+    // ==============================
+    function openSettings() {
+      const modal = document.getElementById('settingsModal');
+      const input = document.getElementById('apiKeyInput');
+      input.value = geminiApiKey;
+      modal.classList.add('active');
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsModal').classList.remove('active');
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById('apiKeyInput').value.trim();
+      geminiApiKey = key;
+      if (key) {
+        localStorage.setItem('geminiApiKey', key);
+      } else {
+        localStorage.removeItem('geminiApiKey');
+      }
+      updateApiBadge();
+      closeSettings();
+      showToast(key ? 'Gemini APIキーを保存しました' : 'APIキーを削除しました');
+    }
+
+    function updateApiBadge() {
+      const badge = document.getElementById('apiBadge');
+      const btn = document.getElementById('settingsBtn');
+      if (geminiApiKey) {
+        badge.style.display = 'inline-block';
+        btn.classList.add('api-active');
+      } else {
+        badge.style.display = 'none';
+        btn.classList.remove('api-active');
+      }
     }
 
     // ==============================
