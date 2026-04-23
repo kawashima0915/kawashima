@@ -1,7 +1,8 @@
-const CACHE_NAME = 'essence-checker-v1';
+const CACHE_NAME = 'hello-pwa-v1';
 const ASSETS = [
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icon.svg'
 ];
 
 self.addEventListener('install', (event) => {

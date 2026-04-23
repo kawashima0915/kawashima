@@ -1,18 +1,19 @@
-# 本質チェッカー
+# Hello PWA
 
-言葉を入力すると、その本質を鋭く見抜くスマホ向けPWAアプリです。
+最小構成の Progressive Web App (Hello World) サンプル。
 
-## 機能
+## 構成
 
-- 言葉を入力して「診断」ボタンを押すと本質を表示
-- 40語以上の本質データベースを内蔵
-- 未登録の言葉にも独自の本質を生成
-- 診断結果の共有機能
-- 履歴の保存・管理
-- PWA対応（ホーム画面に追加してアプリとして使用可能）
-- オフライン対応
+- `index.html` — 画面本体 + Service Worker 登録
+- `manifest.json` — Web App Manifest
+- `sw.js` — Service Worker（オフラインキャッシュ）
+- `icon.svg` — アイコン
 
-## 使い方
+## 実行
 
-`index.html` をブラウザで開くだけで使えます。
-スマホのブラウザで「ホーム画面に追加」するとアプリのように使えます。
+任意の静的サーバーで配信してください（Service Worker は `file://` では動きません）。
+
+```sh
+python3 -m http.server 8000
+# → http://localhost:8000 をブラウザで開く
+```
